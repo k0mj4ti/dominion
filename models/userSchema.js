@@ -14,6 +14,11 @@ const userSchema = new Schema({
         type: String,
         required: true
     },
+    cardIndex: {
+        type: Number,
+        required: true,
+        default: 0
+    },
     currentStats: {
         type: {
             food: Number,

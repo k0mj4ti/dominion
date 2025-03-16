@@ -1,7 +1,7 @@
-import { getServerSession } from "next-auth";
+'use client'
 import { redirect } from "next/navigation";
 import Login from '@/components/auth/Login';
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import React from 'react';
 
 export const metadata = {
@@ -10,9 +10,31 @@ export const metadata = {
 };
 
 const LoginPage = async () => {
-  const session = await getServerSession();
+  const [user, setUser] = useState(null);
 
-  if (session) {
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.log("Not logged in");
+        return;
+    }
+
+    fetch("/api/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
+    })
+        .then((res) => res.json())
+        .then((data) => {
+            if (data.error) {
+                console.log(data.error);
+                localStorage.removeItem("token");
+                setUser("not logged in")
+            } else {
+                setUser(data);
+            }
+        });
+  }, []);
+
+  if (user === "not logged in") {
     redirect("/");
   }
 
