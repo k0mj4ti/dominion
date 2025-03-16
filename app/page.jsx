@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // Import useRouter for navigation
+import { useRouter } from 'next/navigation';
 import Head from 'next/head';
 import { PlusCircle, Trash2, Edit, Eye, X, Check } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
@@ -8,10 +8,10 @@ import { signOut, useSession } from 'next-auth/react';
 export default function Dashboard() {
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState('list'); // 'list', 'create', 'edit', 'view'
+  const [viewMode, setViewMode] = useState('list');
   const [selectedCard, setSelectedCard] = useState(null);
-  const { data: session, status } = useSession(); 
-  const router = useRouter(); // Initialize useRouter
+  const [user, setUser] = useState(null);
+  const router = useRouter();
   const [formData, setFormData] = useState({
     title: '',
     imagePath: '',
@@ -20,19 +20,30 @@ export default function Dashboard() {
     addon: ''
   });
 
-  // Redirect to /auth/login if the user is not logged in
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/login');
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.log("Not logged in");
+        return;
     }
-  }, [status, router]);
 
-  // Fetch cards on component mount
+    fetch("/api/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
+    })
+        .then((res) => res.json())
+        .then((data) => {
+            if (data.error) {
+                console.log(data.error);
+                localStorage.removeItem("token");
+            } else {
+                setUser(data);
+            }
+        });
+  }, []);
+
   useEffect(() => {
-    if (status === 'authenticated') {
       fetchCards();
-    }
-  }, [status]);
+  }, []);
 
   const fetchCards = async () => {
     try {
@@ -504,10 +515,10 @@ export default function Dashboard() {
         Dominion Admin
       </h1>
       <div className="flex items-center space-x-4">
-        {session ? (
+        {user ? (
           <>
             <div className="text-gray-400 text-sm">
-              Logged in as <span className="font-semibold text-gray-200">{session.user?.username || 'User'}</span>
+              Logged in as <span className="font-semibold text-gray-200">{user?.email || 'User'}</span>
             </div>
             <button
               onClick={() => signOut()}

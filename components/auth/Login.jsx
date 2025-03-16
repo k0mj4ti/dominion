@@ -1,14 +1,11 @@
 "use client";
 import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
-import { signIn, getSession } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const redirect_uri = searchParams.get("redirect_uri");
     
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -27,20 +24,12 @@ const Login = () => {
         }
     }, [notification]);
 
-    useEffect(() => {
-        getSession().then(session => {
-            if (session && redirect_uri) {
-                const token = session.user.accessToken;
-                window.location.href = `${redirect_uri}?token=${token}`;
-            }
-        });
-    }, [redirect_uri]);
 
     const validateEmail = (email) => {
         const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         return regex.test(email);
     };
-
+    
     const handleSubmit = async (e) => {
         e.preventDefault();
         setEmptyFields([]);
@@ -63,26 +52,21 @@ const Login = () => {
         }
 
         setError(null);
-        try {
-            setSubmitting(true);
-            const response = await signIn("credentials", {
-                email,
-                password,
-                redirect: false,
-                callbackUrl: redirect_uri || "/"
-            });
+        const response = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+        });
 
-            if (response?.error) {
-                setNotification(response.error || "Invalid credentials");
-                return;
-            }
+        const data = await response.json();
 
-            router.push("/");
-        } catch (error) {
-            setNotification("Something went wrong. Please try again.");
-        } finally {
-            setSubmitting(false);
+        if (!response.ok) {
+            setError(data.error);
+            return;
         }
+
+        localStorage.setItem("token", data.token);
+        router.push("/"); 
     };
 
     return (
