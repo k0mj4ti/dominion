@@ -1,9 +1,9 @@
 'use client'
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { redirect, useRouter } from 'next/navigation';
 import Head from 'next/head';
 import { PlusCircle, Trash2, Edit, Eye, X, Check } from 'lucide-react';
-import { signOut, useSession } from 'next-auth/react';
+
 
 export default function Dashboard() {
   const [cards, setCards] = useState([]);
@@ -23,7 +23,7 @@ export default function Dashboard() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
-      console.log("Not logged in");
+        redirect("/auth/login");
         return;
     }
 
@@ -521,7 +521,7 @@ export default function Dashboard() {
               Logged in as <span className="font-semibold text-gray-200">{user?.email || 'User'}</span>
             </div>
             <button
-              onClick={() => signOut()}
+              onClick={() => {localStorage.removeItem("token"); router.push("/auth/login");}}
               className="py-1 px-3 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm"
             >
               Sign Out

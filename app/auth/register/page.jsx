@@ -31,7 +31,7 @@ const RegisterPage = async () => {
         });
   }, []);
 
-  if (user === "not logged in") {
+  if (user) {
     redirect("/");
   }
 

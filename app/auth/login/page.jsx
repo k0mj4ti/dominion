@@ -30,7 +30,7 @@ const LoginPage = async () => {
         });
   }, []);
 
-  if (user === "not logged in") {
+  if (user) {
     redirect("/");
   }
 

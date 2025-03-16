@@ -137,6 +137,9 @@ const Register = () => {
               {submitting ? "Registering..." : "Register"}
             </button>
           </form>
+          <div className="text-center mt-4 text-gray-400">
+              Already have an account? <Link href="/auth/login" className="text-blue-400 hover:underline">Login</Link>
+          </div>
         </div>
       </main>
     </div>
