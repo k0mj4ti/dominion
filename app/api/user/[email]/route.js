@@ -10,7 +10,7 @@ export async function GET(req, {params}) {
             return new Response(JSON.stringify({ error: "Email is required" }), { status: 400 });
         }
 
-        const user = await User.findOne({ email }, "currentStats daysSurvived");
+        const user = await User.findOne({ email }, "currentStats daysSurvived cardIndex");
         
         if (!user) {
             return new Response(JSON.stringify({ error: "User not found" }), { status: 404 });
