@@ -4,10 +4,6 @@ import Login from '@/components/auth/Login';
 import { Suspense, useEffect, useState } from "react";
 import React from 'react';
 
-export const metadata = {
-  title: "Login",
-  description: "Access your CourseModule account to manage and create courses.",
-};
 
 const LoginPage = async () => {
   const [user, setUser] = useState(null);
