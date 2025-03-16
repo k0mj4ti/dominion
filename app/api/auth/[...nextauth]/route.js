@@ -2,36 +2,38 @@ import User from "@/models/userSchema";
 import connectToDb from "@/utils/database";
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
+import jwt from "jsonwebtoken";
+
+async function generateJwtToken(user) {
+    return jwt.sign(
+        {
+            id: user._id.toString(),
+            email: user.email,
+            username: user.username,
+        },
+        process.env.NEXTAUTH_SECRET,
+        { expiresIn: "1h" }
+    );
+}
 
 export const authOptions = {
     providers: [
         CredentialsProvider({
             name: "credentials",
             credentials: {},
-            async authorize(credentials) {
+            async authorize(credentials, req) {
                 const { email, password } = credentials;
 
-                try {
-                    await connectToDb();
-                    const user = await User.findOne({ email }).lean();
+                await connectToDb();
+                const user = await User.findOne({ email }).lean();
+                if (!user) throw new Error("No user found with this email");
 
-                    if (!user) throw new Error("No user found with this email");
-                    const passwordMatch = await bcrypt.compare(password, user.password);
-                    if (!passwordMatch) throw new Error("Invalid password.");
+                const passwordMatch = await bcrypt.compare(password, user.password);
+                if (!passwordMatch) throw new Error("Invalid password.");
 
-                    return {
-                        id: user._id.toString(),
-                        email: user.email,
-                        username: user.username,
-                        currentStats: user.currentStats,
-                        daysSurvived: user.daysSurvived,
-                    };
-                } catch (error) {
-                    throw error;
-                }
+                return user;
             }
         })
     ],
@@ -49,9 +51,8 @@ export const authOptions = {
             try {
                 await connectToDb();
                 const sessionUser = await User.findOne({ email: token.email })
-                .select("username currentStats daysSurvived")
-                .lean();
-            
+                    .select("username currentStats daysSurvived")
+                    .lean();
 
                 if (sessionUser) {
                     session.user.id = sessionUser._id.toString();
@@ -59,6 +60,7 @@ export const authOptions = {
                     session.user.username = sessionUser.username;
                     session.user.currentStats = sessionUser.currentStats;
                     session.user.daysSurvived = sessionUser.daysSurvived;
+                    session.user.accessToken = token.accessToken; // Token visszaadása
                 }
             } catch (error) {
                 console.error("Session callback error:", error);
@@ -67,29 +69,19 @@ export const authOptions = {
             return session;
         },
 
-        async signIn({ account, profile, credentials }) {
-
-            if (account?.provider === "credentials") {
-                try {
-                    await connectToDb();
-                    const user = await User.findOne({ email: credentials.email });
-
-                    const passwordMatch = await bcrypt.compare(credentials.password, user.password);
-                    return passwordMatch;
-                } catch (error) {
-                    return false;
-                }
+        async signIn({ user, account, credentials, req }) {
+            if (req.query.redirect_uri) {
+                // Ha WPF-ből jön a kérés, generáljunk egy token-t
+                user.accessToken = randomUUID();
             }
+            return true;
         },
 
         async redirect({ url, baseUrl }) {
-            try {
-                const urlObject = new URL(url, baseUrl);
-                return urlObject.origin === baseUrl || urlObject.pathname.startsWith('/') ? urlObject.href : `${baseUrl}/`;
-            } catch (error) {
-                console.error("Redirect callback error:", error);
-                return `${baseUrl}/`;
+            if (url.includes("redirect_uri")) {
+                return url;
             }
+            return baseUrl;
         },
     },
 };
