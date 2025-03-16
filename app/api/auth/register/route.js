@@ -39,7 +39,8 @@ export async function POST(request) {
         const user = await User.create({
             email, 
             username: newUsername, 
-            password, 
+            password,
+            cardIndex: 0, 
             currentStats: {
                 food: 50,
                 drink: 50,
