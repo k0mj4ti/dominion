@@ -1,8 +1,9 @@
 'use client'
 import { redirect } from "next/navigation";
-import Login from '@/components/auth/Login';
+
 import { Suspense, useEffect, useState } from "react";
 import React from 'react';
+import Register from "@/components/auth/Register";
 
 
 const RegisterPage = async () => {
